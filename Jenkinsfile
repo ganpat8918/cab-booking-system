@@ -14,6 +14,25 @@ pipeline {
             }
         }
 
+        stage('Show Workspace') {
+            steps {
+                sh 'pwd'
+                sh 'ls -la'
+            }
+        }
+
+        stage('Check Java') {
+            steps {
+                sh 'java -version'
+            }
+        }
+
+        stage('Check Maven') {
+            steps {
+                sh 'mvn -version'
+            }
+        }
+
         stage('Build') {
             steps {
                 sh 'mvn clean package -DskipTests'
@@ -26,12 +45,12 @@ pipeline {
             }
         }
 
-        stage('Push Docker Image') {
+        stage('Docker Push') {
             steps {
                 withCredentials([usernamePassword(
-                        credentialsId: 'dockerhub',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS')]) {
+                    credentialsId: 'dockerhub',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS')]) {
 
                     sh '''
                     echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
@@ -40,14 +59,16 @@ pipeline {
                 }
             }
         }
+
     }
 
     post {
         success {
-            echo 'Pipeline completed successfully!'
+            echo 'CI/CD Completed Successfully'
         }
+
         failure {
-            echo 'Pipeline failed!'
+            echo 'Pipeline Failed'
         }
     }
 }
