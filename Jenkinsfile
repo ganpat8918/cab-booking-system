@@ -14,51 +14,55 @@ pipeline {
             }
         }
 
-        stage('Workspace') {
-            steps {
-                sh 'pwd'
-                sh 'ls -la'
-            }
-        }
-
-        stage('Java') {
+        stage('Verify Java') {
             steps {
                 sh 'java -version'
             }
         }
 
-        stage('Maven Wrapper') {
+        stage('Verify Docker') {
             steps {
-                sh 'chmod +x mvnw'
-                sh './mvnw -version'
+                sh 'docker version'
             }
         }
 
-        stage('Build') {
+        stage('Build Spring Boot') {
             steps {
+                sh 'chmod +x mvnw'
                 sh './mvnw clean package -DskipTests'
             }
         }
 
-        stage('Docker Build') {
+        stage('Build Docker Image') {
             steps {
                 sh 'docker build -t $IMAGE_NAME .'
             }
         }
 
-        stage('Docker Push') {
+        stage('Push Docker Image') {
+
             steps {
-                withCredentials([usernamePassword(
+
+                withCredentials([
+                    usernamePassword(
                         credentialsId: 'dockerhub',
                         usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS')]) {
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
 
                     sh '''
-                    echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                    echo "$DOCKER_PASS" | docker login \
+                    -u "$DOCKER_USER" \
+                    --password-stdin
+
                     docker push $IMAGE_NAME
                     '''
+
                 }
+
             }
+
         }
 
     }
@@ -66,11 +70,15 @@ pipeline {
     post {
 
         success {
-            echo 'Pipeline Completed Successfully'
+
+            echo "Pipeline Completed Successfully"
+
         }
 
         failure {
-            echo 'Pipeline Failed'
+
+            echo "Pipeline Failed"
+
         }
 
     }
