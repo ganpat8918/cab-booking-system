@@ -1,9 +1,10 @@
 pipeline {
 
-    agent any
-
-    tools {
-        maven 'Maven'
+    agent {
+        docker {
+            image 'maven:3.9.9-eclipse-temurin-17'
+            args '-v $HOME/.m2:/root/.m2'
+        }
     }
 
     stages {
@@ -20,18 +21,20 @@ pipeline {
             }
         }
 
-        stage('Docker Build') {
+        stage('Archive JAR') {
             steps {
-                sh 'docker build -t cab-booking-system .'
-            }
-        }
-
-        stage('Docker Images') {
-            steps {
-                sh 'docker images'
+                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
             }
         }
 
     }
 
+    post {
+        success {
+            echo 'Build Successful'
+        }
+        failure {
+            echo 'Build Failed'
+        }
+    }
 }
