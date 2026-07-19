@@ -1,0 +1,6 @@
+target/*.original
+.git
+.settings
+.project
+.classpath
+.idea
