@@ -1,10 +1,9 @@
 pipeline {
 
-    agent {
-        docker {
-            image 'maven:3.9.9-eclipse-temurin-17'
-            args '-v $HOME/.m2:/root/.m2'
-        }
+    agent any
+
+    environment {
+        IMAGE_NAME = "bhulu79/cab-booking-system:latest"
     }
 
     stages {
@@ -21,20 +20,34 @@ pipeline {
             }
         }
 
-        stage('Archive JAR') {
+        stage('Docker Build') {
             steps {
-                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                sh 'docker build -t $IMAGE_NAME .'
             }
         }
 
+        stage('Push Docker Image') {
+            steps {
+                withCredentials([usernamePassword(
+                        credentialsId: 'dockerhub',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS')]) {
+
+                    sh '''
+                    echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                    docker push $IMAGE_NAME
+                    '''
+                }
+            }
+        }
     }
 
     post {
         success {
-            echo 'Build Successful'
+            echo 'Pipeline completed successfully!'
         }
         failure {
-            echo 'Build Failed'
+            echo 'Pipeline failed!'
         }
     }
 }
